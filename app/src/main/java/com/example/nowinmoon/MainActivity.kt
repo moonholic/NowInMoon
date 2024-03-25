@@ -6,14 +6,19 @@ import android.view.MenuItem
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
@@ -21,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
+import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
 import com.example.nowinmoon.ui.MoonTheme
@@ -48,13 +54,20 @@ class MainActivity : AppCompatActivity() {
 
     @Composable
     fun MyApp(modifier: Modifier = Modifier) {
+
+        var shouldShowOnBoarding by remember { mutableStateOf(true) }
+
         Surface(
             modifier = modifier,
             color = MaterialTheme.colorScheme.background
         ) {
-            Column {
-                Greeting(titles, modifier.padding(10.dp))
-                Greeting(titles, modifier.padding(10.dp))
+            if (shouldShowOnBoarding) {
+                OnboardingScreen( onContinueClicked = { shouldShowOnBoarding = false } )
+            } else {
+                Column {
+                    Greeting(titles, modifier.padding(10.dp))
+                    Greeting(titles, modifier.padding(10.dp))
+                }
             }
         }
     }
@@ -68,11 +81,11 @@ class MainActivity : AppCompatActivity() {
     // 코드에서 눌러도 포커싱이 안간다. 프리뷰에서 누르면 코드로 이동.
     @Composable
     private fun Greeting(titles: List<String>, modifier: Modifier = Modifier) {
-        val expanded = remember {   // remember : 리컴포지션을 방지하고 상태를 기억하게 해줌
+        var expanded by remember {   // remember : 리컴포지션을 방지하고 상태를 기억하게 해줌
             mutableStateOf(false)       // 컴포저블 내부 상태. 이 상태를 구독함. 상태가 변경되면 재구성됨.
         }
 
-        val extraPadding = if (expanded.value) 48.dp else 0.dp
+        val extraPadding = if (expanded) 48.dp else 0.dp
 
         Surface(color = MaterialTheme.colorScheme.primary) {
             Row(modifier.padding(24.dp)) {
@@ -89,10 +102,10 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 ElevatedButton(
-                    onClick = { expanded.value = !expanded.value }
+                    onClick = { expanded = !expanded }
                 ) {
                     Text(
-                        if (expanded.value)
+                        if (expanded)
                             "Show less!"
                         else
                             "Show more!"
@@ -107,6 +120,32 @@ class MainActivity : AppCompatActivity() {
     fun Preview() {
         MoonTheme {
             MyApp()
+        }
+    }
+
+    @Composable
+    fun OnboardingScreen(onContinueClicked: () -> Unit, modifier: Modifier = Modifier) {
+
+        Column (
+            modifier = modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text("Welcome to the NowInMoon!!")
+            Button(
+                modifier = Modifier.padding(vertical = 24.dp),
+                onClick = onContinueClicked
+            ) {
+                Text("Continue")
+            }
+        }
+    }
+
+    @Preview(showBackground = true, widthDp = 320, heightDp = 320)
+    @Composable
+    fun OnBoardingPreview() {
+        MoonTheme {
+            OnboardingScreen(onContinueClicked = {})    // do nothing on click.
         }
     }
 
