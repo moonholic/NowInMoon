@@ -7,6 +7,7 @@ import android.view.MenuItem
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -17,7 +18,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons.Filled
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -90,6 +98,18 @@ class MainActivity : AppCompatActivity() {
     // 코드에서 눌러도 포커싱이 안간다. 프리뷰에서 누르면 코드로 이동.
     @Composable
     private fun Greeting(title: String, modifier: Modifier = Modifier) {
+        Card(
+           colors = CardDefaults.cardColors(
+               containerColor = MaterialTheme.colorScheme.primary
+           ),
+            modifier = modifier.padding(vertical = 4.dp, horizontal = 8.dp)
+        ) {
+            CardContent(title)
+        }
+    }
+
+    @Composable
+    private fun CardContent(title: String, modifier: Modifier = Modifier) {
         // remember : 리컴포지션을 방지하고 상태를 기억하게 해줌
         // rememberSaveable : 화면이 회전되어도 유지.
         var expanded by rememberSaveable {
@@ -106,10 +126,21 @@ class MainActivity : AppCompatActivity() {
         )
 
         Surface(color = MaterialTheme.colorScheme.primary) {
-            Row(modifier.padding(24.dp)) {
-                Column(modifier = Modifier
-                    .weight(1f)
-                    .padding(bottom = extraPadding.coerceAtLeast(0.dp))     // coerce : "강요하다", "억압하다"
+            Row(
+                modifier = Modifier
+                    .padding(24.dp)
+                    .animateContentSize(
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow
+                        )
+                    )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(12.dp)
+//                        .padding(bottom = extraPadding.coerceAtLeast(0.dp))     // coerce : "강요하다", "억압하다"
                 ) {
                     Text(
                         text = title,
@@ -119,6 +150,21 @@ class MainActivity : AppCompatActivity() {
                             fontWeight = FontWeight.ExtraBold,
                             color = Color.Red
                         )
+                    )
+                    if (expanded) {
+                        Text(
+                            text = "긴 문자여어어어러얼 입니다요. 엄청나게 길어요오오오오 완전 길어요오오오 테스트 하는 중입니다.".repeat(4)
+                        )
+                    }
+                }
+                // 리플 효과를 알아서 넣어줌.
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        imageVector = if (expanded) Filled.KeyboardArrowUp else Filled.KeyboardArrowDown,
+                        contentDescription = if (expanded)
+                            stringResource(R.string.show_less)
+                        else
+                            stringResource(R.string.show_more)
                     )
                 }
                 ElevatedButton(
