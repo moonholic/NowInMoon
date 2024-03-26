@@ -1,26 +1,34 @@
 package com.example.nowinmoon
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.findNavController
@@ -55,7 +63,8 @@ class MainActivity : AppCompatActivity() {
     @Composable
     fun MyApp(modifier: Modifier = Modifier) {
 
-        var shouldShowOnBoarding by remember { mutableStateOf(true) }
+        var shouldShowOnBoarding by rememberSaveable { mutableStateOf(true) }
+        var title = "test"
 
         Surface(
             modifier = modifier,
@@ -65,8 +74,8 @@ class MainActivity : AppCompatActivity() {
                 OnboardingScreen( onContinueClicked = { shouldShowOnBoarding = false } )
             } else {
                 Column {
-                    Greeting(titles, modifier.padding(10.dp))
-                    Greeting(titles, modifier.padding(10.dp))
+//                    Greeting(title, modifier.padding(10.dp))
+                    Greetings()
                 }
             }
         }
@@ -80,37 +89,63 @@ class MainActivity : AppCompatActivity() {
 
     // 코드에서 눌러도 포커싱이 안간다. 프리뷰에서 누르면 코드로 이동.
     @Composable
-    private fun Greeting(titles: List<String>, modifier: Modifier = Modifier) {
-        var expanded by remember {   // remember : 리컴포지션을 방지하고 상태를 기억하게 해줌
+    private fun Greeting(title: String, modifier: Modifier = Modifier) {
+        // remember : 리컴포지션을 방지하고 상태를 기억하게 해줌
+        // rememberSaveable : 화면이 회전되어도 유지.
+        var expanded by rememberSaveable {
             mutableStateOf(false)       // 컴포저블 내부 상태. 이 상태를 구독함. 상태가 변경되면 재구성됨.
         }
 
-        val extraPadding = if (expanded) 48.dp else 0.dp
+        val extraPadding by animateDpAsState(
+            if (expanded) 100.dp else 0.dp,
+            // spring, tween, repeatable..
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,     // damping : 제동
+                stiffness = Spring.StiffnessLow     // stiffness : "뻣뻣함"
+            )
+        )
 
         Surface(color = MaterialTheme.colorScheme.primary) {
             Row(modifier.padding(24.dp)) {
                 Column(modifier = Modifier
                     .weight(1f)
-                    .padding(bottom = extraPadding)
+                    .padding(bottom = extraPadding.coerceAtLeast(0.dp))     // coerce : "강요하다", "억압하다"
                 ) {
-                    for (item in titles) {
-                        Text(
-                            text = item,
-                            color = Color.DarkGray,
-                            modifier = Modifier.padding(1.dp)
+                    Text(
+                        text = title,
+                        color = Color.DarkGray,
+                        modifier = Modifier.padding(1.dp),
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.Red
                         )
-                    }
+                    )
                 }
                 ElevatedButton(
                     onClick = { expanded = !expanded }
                 ) {
                     Text(
                         if (expanded)
-                            "Show less!"
+                            stringResource(R.string.show_less)
                         else
-                            "Show more!"
+                            stringResource(R.string.show_more)
                     )
                 }
+            }
+        }
+    }
+
+    @Composable
+    private fun Greetings(
+        modifier: Modifier = Modifier,
+        names: List<String> = List(1000) { "$it" }
+    ) {
+        // LazyColumn은 RecyclerView와 같은 하위 요소를 재활용하지 않는다. 컴포저블을 방출하는 것은 Android View를 인스턴스화 하는것보다 상대적으로 비용이 적게 들므로
+        // LazyColumn은 스크롤할 때 새 컴포저블을 방출하고 계속 성능을 유지한다.!
+        LazyColumn(modifier = modifier.padding(vertical = 4.dp)) {
+            // Android 스튜디오는 기본적으로 다른 items 함수를 선택하므로 androidx.compose.foundation.lazy.items를 가져와야 함
+            items(items = names) { name ->  // items 자동으로 import 안됨.
+                Greeting(title = name)
             }
         }
     }
@@ -133,17 +168,38 @@ class MainActivity : AppCompatActivity() {
         ) {
             Text("Welcome to the NowInMoon!!")
             Button(
-                modifier = Modifier.padding(vertical = 24.dp),
+                modifier = Modifier.padding(24.dp),
                 onClick = onContinueClicked
             ) {
-                Text("Continue")
+                Text(
+                    "Continue...?"
+                )
             }
         }
     }
 
-    @Preview(showBackground = true, widthDp = 320, heightDp = 320)
+    @Preview(
+        showBackground = true,
+        widthDp = 320,
+        heightDp = 320,
+        uiMode = Configuration.UI_MODE_NIGHT_YES,
+        name = "온보딩 프리뷰"
+    )
     @Composable
     fun OnBoardingPreview() {
+        MoonTheme {
+            OnboardingScreen(onContinueClicked = {})    // do nothing on click.
+        }
+    }
+
+    @Preview(
+        showBackground = true,
+        widthDp = 320,
+        heightDp = 320,
+        name = "온보딩 프리뷰 - 기본"
+    )
+    @Composable
+    fun OnBoardingPreview2() {
         MoonTheme {
             OnboardingScreen(onContinueClicked = {})    // do nothing on click.
         }
